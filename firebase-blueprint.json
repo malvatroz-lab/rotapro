@@ -1,0 +1,102 @@
+{
+  "entities": {
+    "DailyEntry": {
+      "title": "DailyEntry",
+      "description": "Daily earnings, operating expenses, mileage, and calculated profit for a rideshare driver on a specific calendar date.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Authenticated Firebase UID of the driver who owns this entry."
+        },
+        "year": {
+          "type": "integer",
+          "description": "Calendar year (e.g., 2026)."
+        },
+        "month": {
+          "type": "integer",
+          "description": "Calendar month number (1 to 12)."
+        },
+        "day": {
+          "type": "integer",
+          "description": "Day of the month (1 to 31)."
+        },
+        "yearMonth": {
+          "type": "string",
+          "description": "Year-month partition key in YYYY-MM format (e.g., 2026-11)."
+        },
+        "uber": {
+          "type": "number",
+          "description": "Gross earnings from Uber for this day (revenue/addition)."
+        },
+        "pop99": {
+          "type": "number",
+          "description": "Gross earnings from 99 Pop for this day (revenue/addition)."
+        },
+        "combustivel": {
+          "type": "number",
+          "description": "Fuel expense for this day."
+        },
+        "recarga": {
+          "type": "number",
+          "description": "EV/phone/tag recharge expense for this day."
+        },
+        "aluguel": {
+          "type": "number",
+          "description": "Vehicle rental expense for this day."
+        },
+        "alimento": {
+          "type": "number",
+          "description": "Food and meal expense for this day."
+        },
+        "manutencao": {
+          "type": "number",
+          "description": "Vehicle maintenance expense for this day."
+        },
+        "kmRodado": {
+          "type": "number",
+          "description": "Total kilometers driven on this day."
+        },
+        "notes": {
+          "type": "string",
+          "description": "Optional short driver note for the day."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when the record was created (FieldValue.serverTimestamp())."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when the record was last updated (FieldValue.serverTimestamp())."
+        }
+      },
+      "required": [
+        "userId",
+        "year",
+        "month",
+        "day",
+        "yearMonth",
+        "uber",
+        "pop99",
+        "combustivel",
+        "recarga",
+        "aluguel",
+        "alimento",
+        "manutencao",
+        "kmRodado",
+        "createdAt",
+        "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/users/{userId}/daily_entries/{entryId}": {
+      "schema": {
+        "$ref": "#/entities/DailyEntry"
+      },
+      "description": "Driver-owned daily rideshare earnings, expenses, and kilometers driven keyed by YYYY-MM-DD."
+    }
+  }
+}
