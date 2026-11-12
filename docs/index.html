@@ -1,0 +1,1305 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#0B1117" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>RotaLucro — Controle do Motorista</title>
+  <style>
+    :root {
+      --bg: #0B1117;
+      --surface: #121B24;
+      --surface-2: #1A2633;
+      --outline: #263547;
+      --text: #F1F5F9;
+      --muted: #94A3B8;
+      --emerald: #10B981;
+      --emerald-bg: rgba(16, 185, 129, 0.14);
+      --coral: #F43F5E;
+      --coral-bg: rgba(244, 63, 94, 0.14);
+      --amber: #FBBF24;
+      --amber-bg: rgba(251, 191, 36, 0.14);
+      --sky: #38BDF8;
+      --sky-bg: rgba(56, 189, 248, 0.14);
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.4;
+      padding-bottom: 92px;
+    }
+
+    .container {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 12px 14px;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-badge {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: var(--emerald);
+      color: #042F1E;
+      display: grid;
+      place-items: center;
+      font-weight: 800;
+      font-size: 16px;
+    }
+
+    .brand-title {
+      font-size: 19px;
+      font-weight: 800;
+      letter-spacing: -0.3px;
+    }
+
+    .brand-sub {
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .topbar-actions {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .btn-ghost {
+      background: var(--surface);
+      border: 1px solid var(--outline);
+      color: var(--text);
+      padding: 8px 11px;
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .btn-ghost:active {
+      opacity: 0.75;
+    }
+
+    .month-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--surface);
+      border: 1px solid var(--outline);
+      border-radius: 14px;
+      padding: 4px 6px;
+      margin-bottom: 12px;
+    }
+
+    .month-nav-btn {
+      background: transparent;
+      border: none;
+      color: var(--text);
+      width: 42px;
+      height: 42px;
+      border-radius: 10px;
+      font-size: 20px;
+      cursor: pointer;
+    }
+
+    .month-nav-btn:hover {
+      background: var(--surface-2);
+    }
+
+    .month-label-btn {
+      background: transparent;
+      border: none;
+      color: var(--text);
+      font-size: 16px;
+      font-weight: 700;
+      padding: 8px 14px;
+      border-radius: 10px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .summary-card {
+      background: linear-gradient(145deg, var(--surface), var(--surface-2));
+      border: 1px solid var(--outline);
+      border-radius: 20px;
+      padding: 14px;
+      margin-bottom: 12px;
+      position: sticky;
+      top: 8px;
+      z-index: 10;
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
+    }
+
+    .summary-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 10px;
+      cursor: pointer;
+    }
+
+    .summary-label {
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    .hero-profit {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 26px;
+      font-weight: 800;
+      margin-top: 2px;
+    }
+
+    .profit-pos { color: var(--emerald); }
+    .profit-neg { color: var(--coral); }
+
+    .summary-right {
+      text-align: right;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 4px;
+    }
+
+    .pill-badge {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 8px;
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    .metric-tile {
+      background: rgba(11, 17, 23, 0.55);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 12px;
+      padding: 9px 10px;
+    }
+
+    .metric-title {
+      font-size: 11px;
+      color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .metric-val {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 13px;
+      font-weight: 700;
+      margin-top: 4px;
+    }
+
+    .tabs-scroll {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding: 4px 2px 10px;
+      scrollbar-width: none;
+    }
+
+    .tabs-scroll::-webkit-scrollbar {
+      display: none;
+    }
+
+    .tab-chip {
+      flex: 0 0 auto;
+      border: 1px solid var(--outline);
+      background: var(--surface);
+      color: var(--muted);
+      padding: 9px 14px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .tab-chip.active {
+      background: var(--emerald);
+      color: #042F1E;
+      border-color: var(--emerald);
+      font-weight: 700;
+    }
+
+    .tab-banner {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 14px;
+      border-radius: 14px;
+      margin-bottom: 10px;
+      border: 1px solid;
+    }
+
+    .day-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .day-card {
+      background: var(--surface);
+      border: 1px solid var(--outline);
+      border-radius: 16px;
+      padding: 11px 12px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+    }
+
+    .day-card.today {
+      border-color: var(--emerald);
+      box-shadow: 0 0 0 1px rgba(16, 185, 129, 0.3);
+    }
+
+    .day-badge {
+      width: 58px;
+      flex-shrink: 0;
+      background: var(--surface-2);
+      border-radius: 12px;
+      padding: 7px 4px;
+      text-align: center;
+    }
+
+    .day-card.today .day-badge {
+      background: var(--emerald);
+      color: #042F1E;
+    }
+
+    .day-num {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 16px;
+      font-weight: 800;
+    }
+
+    .day-sub {
+      font-size: 10px;
+      opacity: 0.85;
+      font-weight: 600;
+    }
+
+    .day-center {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .day-empty {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .day-flows {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .day-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-top: 5px;
+    }
+
+    .mini-tag {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 6px;
+      background: var(--amber-bg);
+      color: var(--amber);
+    }
+
+    .mini-tag.km {
+      background: var(--sky-bg);
+      color: var(--sky);
+    }
+
+    .day-right {
+      text-align: right;
+      flex-shrink: 0;
+    }
+
+    .day-right-label {
+      font-size: 10px;
+      color: var(--muted);
+    }
+
+    .day-right-val {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 15px;
+      font-weight: 800;
+    }
+
+    .bar-track {
+      width: 100%;
+      height: 6px;
+      border-radius: 99px;
+      background: var(--surface-2);
+      margin-top: 6px;
+      overflow: hidden;
+    }
+
+    .bar-fill {
+      height: 100%;
+      border-radius: 99px;
+    }
+
+    .fab {
+      position: fixed;
+      right: 18px;
+      bottom: 18px;
+      background: var(--emerald);
+      color: #042F1E;
+      border: none;
+      border-radius: 16px;
+      padding: 14px 20px;
+      font-size: 14px;
+      font-weight: 800;
+      box-shadow: 0 10px 24px rgba(16, 185, 129, 0.35);
+      cursor: pointer;
+      z-index: 20;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.68);
+      display: none;
+      align-items: flex-end;
+      justify-content: center;
+      z-index: 50;
+      padding: 12px;
+    }
+
+    .modal-backdrop.open {
+      display: flex;
+    }
+
+    .modal-sheet {
+      width: 100%;
+      max-width: 560px;
+      max-height: 90vh;
+      overflow-y: auto;
+      background: var(--surface);
+      border: 1px solid var(--outline);
+      border-radius: 22px;
+      padding: 18px;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .modal-title {
+      font-size: 18px;
+      font-weight: 800;
+    }
+
+    .preview-strip {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      background: var(--surface-2);
+      border-radius: 14px;
+      padding: 11px;
+      margin-bottom: 14px;
+    }
+
+    .section-title {
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      margin: 12px 0 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .fields-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .field-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .field-group.full {
+      grid-column: 1 / -1;
+    }
+
+    .field-group label {
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    .field-group input {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--outline);
+      color: var(--text);
+      border-radius: 12px;
+      padding: 11px 12px;
+      font-size: 15px;
+      font-family: inherit;
+    }
+
+    .field-group input:focus {
+      outline: none;
+      border-color: var(--emerald);
+    }
+
+    .mode-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .mode-pill {
+      flex: 1;
+      padding: 9px;
+      border-radius: 10px;
+      border: 1px solid var(--outline);
+      background: var(--bg);
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .mode-pill.active {
+      background: var(--emerald-bg);
+      border-color: var(--emerald);
+      color: var(--emerald);
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .btn-primary {
+      flex: 1.4;
+      background: var(--emerald);
+      color: #042F1E;
+      border: none;
+      border-radius: 12px;
+      padding: 13px;
+      font-size: 14px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .btn-secondary {
+      flex: 1;
+      background: var(--surface-2);
+      color: var(--text);
+      border: 1px solid var(--outline);
+      border-radius: 12px;
+      padding: 13px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .btn-danger {
+      background: var(--coral-bg);
+      color: var(--coral);
+      border: 1px solid rgba(244, 63, 94, 0.35);
+      border-radius: 10px;
+      padding: 7px 10px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .month-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .month-cell {
+      padding: 11px;
+      border-radius: 10px;
+      border: 1px solid var(--outline);
+      background: var(--bg);
+      color: var(--text);
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .month-cell.active {
+      background: var(--emerald);
+      color: #042F1E;
+      border-color: var(--emerald);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-badge">RL</div>
+        <div>
+          <div class="brand-title">RotaLucro</div>
+          <div class="brand-sub">Salvo neste navegador</div>
+        </div>
+      </div>
+      <div class="topbar-actions">
+        <button class="btn-ghost" id="btnToday">Hoje</button>
+        <button class="btn-ghost" id="btnBackup">Backup</button>
+      </div>
+    </header>
+
+    <div class="month-bar">
+      <button class="month-nav-btn" id="btnPrevMonth" aria-label="Mês anterior">&#8249;</button>
+      <button class="month-label-btn" id="btnOpenMonthPicker">
+        <span id="monthYearLabel">Novembro 2026</span>
+      </button>
+      <button class="month-nav-btn" id="btnNextMonth" aria-label="Próximo mês">&#8250;</button>
+    </div>
+
+    <section class="summary-card" id="summaryCard">
+      <div class="summary-top" id="summaryToggle">
+        <div>
+          <div class="summary-label" id="netProfitTitle">Lucro Líquido • Novembro 2026</div>
+          <div class="hero-profit profit-pos" id="totalNetProfit">R$ 0,00</div>
+        </div>
+        <div class="summary-right">
+          <span class="pill-badge" id="profitPerKmBadge" style="display:none;">R$ 0,00/km</span>
+          <span class="summary-label" id="activeDaysLabel">0 dias lançados</span>
+        </div>
+      </div>
+      <div class="summary-grid" id="summaryGrid">
+        <div class="metric-tile">
+          <div class="metric-title">Faturamento Bruto</div>
+          <div class="metric-val" id="totalGrossRevenue" style="color:var(--emerald)">R$ 0,00</div>
+        </div>
+        <div class="metric-tile">
+          <div class="metric-title">Total das Despesas</div>
+          <div class="metric-val" id="totalExpenses" style="color:var(--coral)">R$ 0,00</div>
+        </div>
+        <div class="metric-tile">
+          <div class="metric-title">Total de KM</div>
+          <div class="metric-val" id="totalKm" style="color:var(--sky)">0 km</div>
+        </div>
+      </div>
+    </section>
+
+    <nav class="tabs-scroll" id="tabsRow"></nav>
+    <div id="tabBannerContainer"></div>
+    <main class="day-list" id="daysContainer"></main>
+  </div>
+
+  <button class="fab" id="btnFabToday">+ Lançar Hoje</button>
+
+  <!-- Full Day Modal -->
+  <div class="modal-backdrop" id="fullDayModal">
+    <div class="modal-sheet">
+      <div class="modal-header">
+        <div>
+          <div class="modal-title" id="fullModalTitle">Dia 12 de Novembro</div>
+          <div class="brand-sub" id="fullModalSub">Quinta-feira</div>
+        </div>
+        <button class="btn-danger" id="btnClearDay">Limpar dia</button>
+      </div>
+
+      <div class="preview-strip">
+        <div>
+          <div class="metric-title">Ganhos</div>
+          <div class="metric-val" id="livePreviewRev" style="color:var(--emerald)">R$ 0,00</div>
+        </div>
+        <div>
+          <div class="metric-title">Gastos</div>
+          <div class="metric-val" id="livePreviewExp" style="color:var(--coral)">R$ 0,00</div>
+        </div>
+        <div>
+          <div class="metric-title">Lucro do dia</div>
+          <div class="metric-val" id="livePreviewProfit">R$ 0,00</div>
+        </div>
+      </div>
+
+      <div class="section-title"><span class="dot" style="background:var(--emerald)"></span>Ganhos (+ Adicionamento)</div>
+      <div class="fields-grid">
+        <div class="field-group">
+          <label for="fUber">Uber (R$)</label>
+          <input id="fUber" type="text" inputmode="decimal" placeholder="0,00" />
+        </div>
+        <div class="field-group">
+          <label for="fPop99">99 Pop (R$)</label>
+          <input id="fPop99" type="text" inputmode="decimal" placeholder="0,00" />
+        </div>
+      </div>
+
+      <div class="section-title"><span class="dot" style="background:var(--coral)"></span>Gastos (- Despesas)</div>
+      <div class="fields-grid">
+        <div class="field-group">
+          <label for="fCombustivel">Combustível (R$)</label>
+          <input id="fCombustivel" type="text" inputmode="decimal" placeholder="0,00" />
+        </div>
+        <div class="field-group">
+          <label for="fRecarga">Recarga (R$)</label>
+          <input id="fRecarga" type="text" inputmode="decimal" placeholder="0,00" />
+        </div>
+        <div class="field-group">
+          <label for="fAluguel">Aluguel (R$)</label>
+          <input id="fAluguel" type="text" inputmode="decimal" placeholder="0,00" />
+        </div>
+        <div class="field-group">
+          <label for="fAlimento">Alimento (R$)</label>
+          <input id="fAlimento" type="text" inputmode="decimal" placeholder="0,00" />
+        </div>
+        <div class="field-group full">
+          <label for="fManutencao">Manutenção (R$)</label>
+          <input id="fManutencao" type="text" inputmode="decimal" placeholder="0,00" />
+        </div>
+      </div>
+
+      <div class="section-title"><span class="dot" style="background:var(--sky)"></span>Quilometragem &amp; Notas</div>
+      <div class="fields-grid">
+        <div class="field-group full">
+          <label for="fKm">KM Rodado</label>
+          <input id="fKm" type="text" inputmode="decimal" placeholder="0" />
+        </div>
+        <div class="field-group full">
+          <label for="fNotes">Observação (opcional)</label>
+          <input id="fNotes" type="text" maxlength="200" placeholder="Ex: Turno noite" />
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn-secondary" id="btnCancelFull">Cancelar</button>
+        <button class="btn-primary" id="btnSaveFull">Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick Single-Tab Modal -->
+  <div class="modal-backdrop" id="quickModal">
+    <div class="modal-sheet">
+      <div class="modal-header">
+        <div>
+          <div class="modal-title" id="quickModalTitle">Uber • Dia 12 Nov</div>
+          <div class="brand-sub" id="quickModalBadge">+ Adicionamento</div>
+        </div>
+        <button class="btn-ghost" id="btnOpenFullFromQuick">Todas as abas</button>
+      </div>
+
+      <div id="quickCurrentRow" class="brand-sub" style="margin-bottom:8px;"></div>
+      <div class="mode-row" id="quickModeRow" style="display:none;">
+        <button class="mode-pill active" id="modeAdd">Somar (+)</button>
+        <button class="mode-pill" id="modeReplace">Substituir</button>
+      </div>
+
+      <div class="field-group">
+        <label for="quickInput" id="quickInputLabel">Valor</label>
+        <input id="quickInput" type="text" inputmode="decimal" placeholder="0,00" />
+      </div>
+
+      <div class="preview-strip" style="grid-template-columns:1fr 1fr; margin-top:12px;">
+        <div>
+          <div class="metric-title">Novo valor do dia</div>
+          <div class="metric-val" id="quickNewVal">R$ 0,00</div>
+        </div>
+        <div>
+          <div class="metric-title">Lucro do dia</div>
+          <div class="metric-val" id="quickNewProfit">R$ 0,00</div>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn-secondary" id="btnCancelQuick">Cancelar</button>
+        <button class="btn-primary" id="btnSaveQuick">Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Month/Year Picker Modal -->
+  <div class="modal-backdrop" id="monthModal">
+    <div class="modal-sheet">
+      <div class="modal-header">
+        <div class="modal-title">Selecionar mês e ano</div>
+        <button class="btn-ghost" id="btnCloseMonthModal">Fechar</button>
+      </div>
+      <div class="month-bar">
+        <button class="month-nav-btn" id="pickerPrevYear">&#8249;</button>
+        <strong id="pickerYearLabel">2026</strong>
+        <button class="month-nav-btn" id="pickerNextYear">&#8250;</button>
+      </div>
+      <div class="month-grid" id="pickerMonthGrid"></div>
+    </div>
+  </div>
+
+  <!-- Backup Modal -->
+  <div class="modal-backdrop" id="backupModal">
+    <div class="modal-sheet">
+      <div class="modal-header">
+        <div class="modal-title">Backup dos dados</div>
+        <button class="btn-ghost" id="btnCloseBackup">Fechar</button>
+      </div>
+      <p class="brand-sub" style="font-size:13px; margin-top:0;">
+        Seus lançamentos ficam salvos automaticamente neste navegador. Exporte um arquivo JSON para guardar ou transferir para outro celular.
+      </p>
+      <div class="modal-actions">
+        <button class="btn-primary" id="btnExportJson">Exportar Backup (.json)</button>
+      </div>
+      <div class="modal-actions">
+        <label class="btn-secondary" style="text-align:center;">
+          Importar Backup (.json)
+          <input type="file" id="importJsonInput" accept="application/json" style="display:none;" />
+        </label>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const STORAGE_KEY = "rotalucro_entries_v1";
+      const MONTHS = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
+      const MONTHS_SHORT = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
+      const WEEKDAYS = ["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"];
+
+      const TABS = [
+        { id: "overview", label: "Resumo", kind: "summary" },
+        { id: "uber", label: "Uber", kind: "revenue", badge: "+ Adicionamento (Ganho)" },
+        { id: "pop99", label: "99 Pop", kind: "revenue", badge: "+ Adicionamento (Ganho)" },
+        { id: "combustivel", label: "Combustível", kind: "expense", badge: "- Gasto (Despesa)" },
+        { id: "recarga", label: "Recarga", kind: "expense", badge: "- Gasto (Despesa)" },
+        { id: "aluguel", label: "Aluguel", kind: "expense", badge: "- Gasto (Despesa)" },
+        { id: "alimento", label: "Alimento", kind: "expense", badge: "- Gasto (Despesa)" },
+        { id: "manutencao", label: "Manutenção", kind: "expense", badge: "- Gasto (Despesa)" },
+        { id: "kmRodado", label: "KM Rodado", kind: "distance", badge: "Quilometragem" },
+        { id: "lucro", label: "Lucro do Dia", kind: "profit", badge: "Resultado Diário" }
+      ];
+
+      const now = new Date();
+      let selectedYear = now.getFullYear();
+      let selectedMonth = now.getMonth() + 1;
+      let selectedTab = "overview";
+      let summaryExpanded = true;
+      let editingDay = null;
+      let quickAddMode = true;
+      let pickerYear = selectedYear;
+
+      function loadAllEntries() {
+        try {
+          return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+        } catch (e) {
+          return {};
+        }
+      }
+
+      function saveAllEntries(map) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(map));
+      }
+
+      function docKey(year, month, day) {
+        return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+      }
+
+      function emptyEntry() {
+        return { uber: 0, pop99: 0, combustivel: 0, recarga: 0, aluguel: 0, alimento: 0, manutencao: 0, kmRodado: 0, notes: "" };
+      }
+
+      function calcEntry(e) {
+        const ganhos = (e.uber || 0) + (e.pop99 || 0);
+        const despesas = (e.combustivel || 0) + (e.recarga || 0) + (e.aluguel || 0) + (e.alimento || 0) + (e.manutencao || 0);
+        return { ganhos, despesas, lucro: ganhos - despesas };
+      }
+
+      function hasData(e) {
+        return e.uber > 0 || e.pop99 > 0 || e.combustivel > 0 || e.recarga > 0 || e.aluguel > 0 || e.alimento > 0 || e.manutencao > 0 || e.kmRodado > 0 || (e.notes && e.notes.trim() !== "");
+      }
+
+      function formatBrl(v) {
+        return (v || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+      }
+
+      function formatKm(v) {
+        return `${(v || 0).toLocaleString("pt-BR", { maximumFractionDigits: 1 })} km`;
+      }
+
+      function parseNum(raw) {
+        if (!raw) return 0;
+        let s = String(raw).trim().replace(/R\$/g, "").replace(/\s/g, "");
+        if (s.includes(",") && s.includes(".")) {
+          s = s.replace(/\./g, "").replace(",", ".");
+        } else {
+          s = s.replace(",", ".");
+        }
+        const n = parseFloat(s);
+        return Number.isFinite(n) && n > 0 ? n : 0;
+      }
+
+      function formatInput(v) {
+        if (!v) return "";
+        return String(Number(v.toFixed(2))).replace(".", ",");
+      }
+
+      function daysInMonth(year, month) {
+        return new Date(year, month, 0).getDate();
+      }
+
+      function render() {
+        const all = loadAllEntries();
+        const totalDays = daysInMonth(selectedYear, selectedMonth);
+        const monthName = MONTHS[selectedMonth - 1];
+        const monthShort = MONTHS_SHORT[selectedMonth - 1];
+
+        document.getElementById("monthYearLabel").textContent = `${monthName} ${selectedYear}`;
+        document.getElementById("netProfitTitle").textContent = `Lucro Líquido • ${monthName} ${selectedYear}`;
+
+        const slots = [];
+        let sumUber = 0, sumPop99 = 0, sumComb = 0, sumRec = 0, sumAlug = 0, sumAlim = 0, sumMan = 0, sumKm = 0, activeDays = 0;
+
+        for (let d = 1; d <= totalDays; d++) {
+          const key = docKey(selectedYear, selectedMonth, d);
+          const e = { ...emptyEntry(), ...(all[key] || {}) };
+          const c = calcEntry(e);
+          const active = hasData(e);
+          if (active) activeDays++;
+          sumUber += e.uber;
+          sumPop99 += e.pop99;
+          sumComb += e.combustivel;
+          sumRec += e.recarga;
+          sumAlug += e.aluguel;
+          sumAlim += e.alimento;
+          sumMan += e.manutencao;
+          sumKm += e.kmRodado;
+
+          const wd = WEEKDAYS[new Date(selectedYear, selectedMonth - 1, d).getDay()];
+          const isToday = selectedYear === now.getFullYear() && selectedMonth === (now.getMonth() + 1) && d === now.getDate();
+          slots.push({ day: d, key, entry: e, ...c, active, wd, isToday, monthShort });
+        }
+
+        const totalBruto = sumUber + sumPop99;
+        const totalDesp = sumComb + sumRec + sumAlug + sumAlim + sumMan;
+        const lucroLiquido = totalBruto - totalDesp;
+
+        const profitEl = document.getElementById("totalNetProfit");
+        profitEl.textContent = formatBrl(lucroLiquido);
+        profitEl.className = "hero-profit " + (lucroLiquido >= 0 ? "profit-pos" : "profit-neg");
+
+        document.getElementById("totalGrossRevenue").textContent = formatBrl(totalBruto);
+        document.getElementById("totalExpenses").textContent = formatBrl(totalDesp);
+        document.getElementById("totalKm").textContent = formatKm(sumKm);
+        document.getElementById("activeDaysLabel").textContent = `${activeDays} dias`;
+
+        const kmBadge = document.getElementById("profitPerKmBadge");
+        if (sumKm > 0) {
+          kmBadge.style.display = "inline-block";
+          kmBadge.textContent = `${formatBrl(lucroLiquido / sumKm)}/km`;
+          kmBadge.style.background = lucroLiquido >= 0 ? "var(--emerald-bg)" : "var(--coral-bg)";
+          kmBadge.style.color = lucroLiquido >= 0 ? "var(--emerald)" : "var(--coral)";
+        } else {
+          kmBadge.style.display = "none";
+        }
+
+        // Tabs
+        const tabsRow = document.getElementById("tabsRow");
+        tabsRow.innerHTML = "";
+        TABS.forEach((t) => {
+          const btn = document.createElement("button");
+          btn.className = "tab-chip" + (selectedTab === t.id ? " active" : "");
+          btn.textContent = t.label;
+          btn.onclick = () => { selectedTab = t.id; render(); };
+          tabsRow.appendChild(btn);
+        });
+
+        // Tab banner
+        const bannerBox = document.getElementById("tabBannerContainer");
+        bannerBox.innerHTML = "";
+        const tabMeta = TABS.find((t) => t.id === selectedTab);
+        if (selectedTab !== "overview") {
+          const totalsMap = {
+            uber: sumUber, pop99: sumPop99, combustivel: sumComb, recarga: sumRec,
+            aluguel: sumAlug, alimento: sumAlim, manutencao: sumMan, kmRodado: sumKm, lucro: lucroLiquido
+          };
+          const val = totalsMap[selectedTab] || 0;
+          const color = tabMeta.kind === "revenue" ? "var(--emerald)"
+            : tabMeta.kind === "expense" ? "var(--coral)"
+            : tabMeta.kind === "distance" ? "var(--sky)"
+            : (val >= 0 ? "var(--emerald)" : "var(--coral)");
+          const bg = tabMeta.kind === "revenue" ? "var(--emerald-bg)"
+            : tabMeta.kind === "expense" ? "var(--coral-bg)"
+            : tabMeta.kind === "distance" ? "var(--sky-bg)"
+            : (val >= 0 ? "var(--emerald-bg)" : "var(--coral-bg)");
+
+          const banner = document.createElement("div");
+          banner.className = "tab-banner";
+          banner.style.background = bg;
+          banner.style.borderColor = color;
+          banner.innerHTML = `
+            <div>
+              <div style="font-weight:700;font-size:14px;">${tabMeta.label} • ${monthName}</div>
+              <div style="font-size:11px;color:${color};font-weight:700;">${tabMeta.badge || ""}</div>
+            </div>
+            <div style="font-family:monospace;font-weight:800;font-size:16px;color:${color};">
+              ${selectedTab === "kmRodado" ? formatKm(val) : formatBrl(val)}
+            </div>`;
+          bannerBox.appendChild(banner);
+        }
+
+        // Days
+        const container = document.getElementById("daysContainer");
+        container.innerHTML = "";
+        const maxAbsProfit = Math.max(1, ...slots.map((s) => Math.abs(s.lucro)));
+
+        slots.forEach((slot) => {
+          const card = document.createElement("div");
+          card.className = "day-card" + (slot.isToday ? " today" : "");
+          card.dataset.day = slot.day;
+
+          const profitColor = !slot.active ? "var(--muted)" : (slot.lucro >= 0 ? "var(--emerald)" : "var(--coral)");
+          let centerHtml = "";
+          let rightVal = formatBrl(slot.lucro);
+          let rightLabel = "Lucro do dia";
+          let rightColor = profitColor;
+
+          if (selectedTab === "overview") {
+            if (!slot.active) {
+              centerHtml = `<div class="day-empty">Toque para lançar dia ${slot.day} ${slot.monthShort}</div>`;
+            } else {
+              const tags = [];
+              if (slot.entry.uber > 0) tags.push(`<span class="mini-tag">Uber ${formatBrl(slot.entry.uber)}</span>`);
+              if (slot.entry.pop99 > 0) tags.push(`<span class="mini-tag">99 ${formatBrl(slot.entry.pop99)}</span>`);
+              if (slot.entry.kmRodado > 0) tags.push(`<span class="mini-tag km">${formatKm(slot.entry.kmRodado)}</span>`);
+              centerHtml = `
+                <div class="day-flows">
+                  <span style="color:var(--emerald)">+ ${formatBrl(slot.ganhos)}</span>
+                  <span style="color:var(--coral)">- ${formatBrl(slot.despesas)}</span>
+                </div>
+                <div class="day-tags">${tags.join("")}</div>`;
+            }
+            card.onclick = () => openFullModal(slot.day);
+          } else if (selectedTab === "lucro") {
+            const pct = slot.active ? Math.max(6, Math.min(100, (Math.abs(slot.lucro) / maxAbsProfit) * 100)) : 0;
+            centerHtml = `
+              <div class="day-flows">
+                <span style="color:var(--emerald)">Bruto: ${formatBrl(slot.ganhos)}</span>
+                <span style="color:var(--coral)">Gastos: ${formatBrl(slot.despesas)}</span>
+              </div>
+              <div class="brand-sub" style="color:var(--sky)">KM: ${formatKm(slot.entry.kmRodado)}</div>
+              ${slot.active ? `<div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${profitColor};"></div></div>` : ""}`;
+            card.onclick = () => openFullModal(slot.day);
+          } else {
+            const v = slot.entry[selectedTab] || 0;
+            const fieldColor = tabMeta.kind === "revenue" ? "var(--emerald)" : tabMeta.kind === "expense" ? "var(--coral)" : "var(--sky)";
+            rightLabel = tabMeta.label;
+            rightVal = selectedTab === "kmRodado" ? formatKm(v) : formatBrl(v);
+            rightColor = v > 0 ? fieldColor : "var(--muted)";
+            centerHtml = `
+              <div style="font-size:13px;font-weight:700;color:${rightColor};">${rightVal}</div>
+              ${slot.active ? `<div class="brand-sub" style="color:${profitColor}">Lucro do dia: ${formatBrl(slot.lucro)}</div>` : `<div class="day-empty">Toque para lançar</div>`}`;
+            card.onclick = () => openQuickModal(slot.day);
+          }
+
+          card.innerHTML = `
+            <div class="day-badge">
+              <div class="day-num">${String(slot.day).padStart(2, "0")}</div>
+              <div class="day-sub">${slot.monthShort} • ${slot.wd}</div>
+            </div>
+            <div class="day-center">${centerHtml}</div>
+            <div class="day-right">
+              <div class="day-right-label">${rightLabel}</div>
+              <div class="day-right-val" style="color:${rightColor}">${rightVal}</div>
+            </div>`;
+          container.appendChild(card);
+        });
+      }
+
+      function updateLiveFullPreview() {
+        const g = parseNum(document.getElementById("fUber").value) + parseNum(document.getElementById("fPop99").value);
+        const d = parseNum(document.getElementById("fCombustivel").value)
+          + parseNum(document.getElementById("fRecarga").value)
+          + parseNum(document.getElementById("fAluguel").value)
+          + parseNum(document.getElementById("fAlimento").value)
+          + parseNum(document.getElementById("fManutencao").value);
+        const l = g - d;
+        document.getElementById("livePreviewRev").textContent = formatBrl(g);
+        document.getElementById("livePreviewExp").textContent = formatBrl(d);
+        const lp = document.getElementById("livePreviewProfit");
+        lp.textContent = formatBrl(l);
+        lp.style.color = l >= 0 ? "var(--emerald)" : "var(--coral)";
+      }
+
+      function openFullModal(day) {
+        editingDay = day;
+        const all = loadAllEntries();
+        const e = { ...emptyEntry(), ...(all[docKey(selectedYear, selectedMonth, day)] || {}) };
+        document.getElementById("fullModalTitle").textContent = `Dia ${day} de ${MONTHS[selectedMonth - 1]} ${selectedYear}`;
+        const wd = WEEKDAYS[new Date(selectedYear, selectedMonth - 1, day).getDay()];
+        document.getElementById("fullModalSub").textContent = wd;
+
+        document.getElementById("fUber").value = formatInput(e.uber);
+        document.getElementById("fPop99").value = formatInput(e.pop99);
+        document.getElementById("fCombustivel").value = formatInput(e.combustivel);
+        document.getElementById("fRecarga").value = formatInput(e.recarga);
+        document.getElementById("fAluguel").value = formatInput(e.aluguel);
+        document.getElementById("fAlimento").value = formatInput(e.alimento);
+        document.getElementById("fManutencao").value = formatInput(e.manutencao);
+        document.getElementById("fKm").value = formatInput(e.kmRodado);
+        document.getElementById("fNotes").value = e.notes || "";
+
+        updateLiveFullPreview();
+        document.getElementById("fullDayModal").classList.add("open");
+      }
+
+      function updateQuickPreview() {
+        const all = loadAllEntries();
+        const e = { ...emptyEntry(), ...(all[docKey(selectedYear, selectedMonth, editingDay)] || {}) };
+        const existing = e[selectedTab] || 0;
+        const entered = parseNum(document.getElementById("quickInput").value);
+        const nextVal = (existing > 0 && quickAddMode) ? existing + entered : entered;
+        const sim = { ...e, [selectedTab]: nextVal };
+        const { lucro } = calcEntry(sim);
+        document.getElementById("quickNewVal").textContent = selectedTab === "kmRodado" ? formatKm(nextVal) : formatBrl(nextVal);
+        const pEl = document.getElementById("quickNewProfit");
+        pEl.textContent = formatBrl(lucro);
+        pEl.style.color = lucro >= 0 ? "var(--emerald)" : "var(--coral)";
+      }
+
+      function openQuickModal(day) {
+        editingDay = day;
+        const tabMeta = TABS.find((t) => t.id === selectedTab);
+        const all = loadAllEntries();
+        const e = { ...emptyEntry(), ...(all[docKey(selectedYear, selectedMonth, day)] || {}) };
+        const existing = e[selectedTab] || 0;
+        quickAddMode = existing > 0;
+
+        document.getElementById("quickModalTitle").textContent = `${tabMeta.label} • Dia ${day} ${MONTHS_SHORT[selectedMonth - 1]}`;
+        document.getElementById("quickModalBadge").textContent = tabMeta.badge || "";
+        document.getElementById("quickInput").value = "";
+
+        const curRow = document.getElementById("quickCurrentRow");
+        const modeRow = document.getElementById("quickModeRow");
+        if (existing > 0) {
+          curRow.textContent = `Atual no dia: ${selectedTab === "kmRodado" ? formatKm(existing) : formatBrl(existing)}`;
+          modeRow.style.display = "flex";
+          document.getElementById("modeAdd").classList.add("active");
+          document.getElementById("modeReplace").classList.remove("active");
+          document.getElementById("quickInputLabel").textContent = "Valor a somar";
+        } else {
+          curRow.textContent = "";
+          modeRow.style.display = "none";
+          document.getElementById("quickInputLabel").textContent = tabMeta.label;
+        }
+
+        updateQuickPreview();
+        document.getElementById("quickModal").classList.add("open");
+      }
+
+      ["fUber","fPop99","fCombustivel","fRecarga","fAluguel","fAlimento","fManutencao","fKm"].forEach((id) => {
+        document.getElementById(id).addEventListener("input", updateLiveFullPreview);
+      });
+      document.getElementById("quickInput").addEventListener("input", updateQuickPreview);
+
+      document.getElementById("modeAdd").onclick = () => {
+        quickAddMode = true;
+        document.getElementById("modeAdd").classList.add("active");
+        document.getElementById("modeReplace").classList.remove("active");
+        document.getElementById("quickInputLabel").textContent = "Valor a somar";
+        updateQuickPreview();
+      };
+      document.getElementById("modeReplace").onclick = () => {
+        quickAddMode = false;
+        document.getElementById("modeReplace").classList.add("active");
+        document.getElementById("modeAdd").classList.remove("active");
+        document.getElementById("quickInputLabel").textContent = "Novo valor total do dia";
+        updateQuickPreview();
+      };
+
+      document.getElementById("btnSaveFull").onclick = () => {
+        const all = loadAllEntries();
+        const key = docKey(selectedYear, selectedMonth, editingDay);
+        const entry = {
+          uber: parseNum(document.getElementById("fUber").value),
+          pop99: parseNum(document.getElementById("fPop99").value),
+          combustivel: parseNum(document.getElementById("fCombustivel").value),
+          recarga: parseNum(document.getElementById("fRecarga").value),
+          aluguel: parseNum(document.getElementById("fAluguel").value),
+          alimento: parseNum(document.getElementById("fAlimento").value),
+          manutencao: parseNum(document.getElementById("fManutencao").value),
+          kmRodado: parseNum(document.getElementById("fKm").value),
+          notes: document.getElementById("fNotes").value.trim()
+        };
+        if (hasData(entry)) all[key] = entry; else delete all[key];
+        saveAllEntries(all);
+        document.getElementById("fullDayModal").classList.remove("open");
+        render();
+      };
+
+      document.getElementById("btnClearDay").onclick = () => {
+        const all = loadAllEntries();
+        delete all[docKey(selectedYear, selectedMonth, editingDay)];
+        saveAllEntries(all);
+        document.getElementById("fullDayModal").classList.remove("open");
+        render();
+      };
+
+      document.getElementById("btnSaveQuick").onclick = () => {
+        const all = loadAllEntries();
+        const key = docKey(selectedYear, selectedMonth, editingDay);
+        const entry = { ...emptyEntry(), ...(all[key] || {}) };
+        const existing = entry[selectedTab] || 0;
+        const entered = parseNum(document.getElementById("quickInput").value);
+        entry[selectedTab] = (existing > 0 && quickAddMode) ? existing + entered : entered;
+        if (hasData(entry)) all[key] = entry; else delete all[key];
+        saveAllEntries(all);
+        document.getElementById("quickModal").classList.remove("open");
+        render();
+      };
+
+      document.getElementById("btnOpenFullFromQuick").onclick = () => {
+        document.getElementById("quickModal").classList.remove("open");
+        openFullModal(editingDay);
+      };
+
+      document.getElementById("btnCancelFull").onclick = () => document.getElementById("fullDayModal").classList.remove("open");
+      document.getElementById("btnCancelQuick").onclick = () => document.getElementById("quickModal").classList.remove("open");
+
+      document.getElementById("btnPrevMonth").onclick = () => {
+        if (selectedMonth === 1) { selectedYear--; selectedMonth = 12; } else { selectedMonth--; }
+        render();
+      };
+      document.getElementById("btnNextMonth").onclick = () => {
+        if (selectedMonth === 12) { selectedYear++; selectedMonth = 1; } else { selectedMonth++; }
+        render();
+      };
+      document.getElementById("btnToday").onclick = () => {
+        selectedYear = now.getFullYear();
+        selectedMonth = now.getMonth() + 1;
+        render();
+        const el = document.querySelector(`.day-card[data-day="${now.getDate()}"]`);
+        if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+      };
+      document.getElementById("btnFabToday").onclick = () => {
+        selectedYear = now.getFullYear();
+        selectedMonth = now.getMonth() + 1;
+        render();
+        openFullModal(now.getDate());
+      };
+
+      document.getElementById("summaryToggle").onclick = () => {
+        summaryExpanded = !summaryExpanded;
+        document.getElementById("summaryGrid").style.display = summaryExpanded ? "grid" : "none";
+      };
+
+      // Month Picker
+      function renderMonthPicker() {
+        document.getElementById("pickerYearLabel").textContent = pickerYear;
+        const grid = document.getElementById("pickerMonthGrid");
+        grid.innerHTML = "";
+        MONTHS_SHORT.forEach((m, idx) => {
+          const btn = document.createElement("button");
+          btn.className = "month-cell" + (pickerYear === selectedYear && idx + 1 === selectedMonth ? " active" : "");
+          btn.textContent = m;
+          btn.onclick = () => {
+            selectedYear = pickerYear;
+            selectedMonth = idx + 1;
+            document.getElementById("monthModal").classList.remove("open");
+            render();
+          };
+          grid.appendChild(btn);
+        });
+      }
+      document.getElementById("btnOpenMonthPicker").onclick = () => {
+        pickerYear = selectedYear;
+        renderMonthPicker();
+        document.getElementById("monthModal").classList.add("open");
+      };
+      document.getElementById("pickerPrevYear").onclick = () => { pickerYear--; renderMonthPicker(); };
+      document.getElementById("pickerNextYear").onclick = () => { pickerYear++; renderMonthPicker(); };
+      document.getElementById("btnCloseMonthModal").onclick = () => document.getElementById("monthModal").classList.remove("open");
+
+      // Backup
+      document.getElementById("btnBackup").onclick = () => document.getElementById("backupModal").classList.add("open");
+      document.getElementById("btnCloseBackup").onclick = () => document.getElementById("backupModal").classList.remove("open");
+      document.getElementById("btnExportJson").onclick = () => {
+        const blob = new Blob([JSON.stringify(loadAllEntries(), null, 2)], { type: "application/json" });
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = `rotalucro-backup-${new Date().toISOString().slice(0, 10)}.json`;
+        a.click();
+      };
+      document.getElementById("importJsonInput").onchange = (ev) => {
+        const file = ev.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = () => {
+          try {
+            const parsed = JSON.parse(reader.result);
+            if (parsed && typeof parsed === "object") {
+              saveAllEntries({ ...loadAllEntries(), ...parsed });
+              document.getElementById("backupModal").classList.remove("open");
+              render();
+            }
+          } catch (err) {
+            alert("Arquivo de backup inválido.");
+          }
+        };
+        reader.readAsText(file);
+      };
+
+      render();
+    })();
+  </script>
+</body>
+</html>

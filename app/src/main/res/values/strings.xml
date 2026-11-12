@@ -46,5 +46,5 @@
     <string name="mode_replace">Substituir valor</string>
     <string name="mode_add">Somar ao valor atual</string>
     <string name="error_retry">Tentar novamente</string>
-    <string name="loading_ledger">Carregando lançamentos do mês...</string>
+    <string name="loading_ledger">Carregando lançamentos do mês…</string>
 </resources>
