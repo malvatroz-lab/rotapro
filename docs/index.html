@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#0B1117" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <title>RotaLucro — Controle do Motorista</title>
+  <title>Rota Lucro do Tatai — Controle do Motorista</title>
   <style>
     :root {
       --bg: #0B1117;
@@ -217,10 +217,58 @@
     }
 
     .metric-val {
-      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
       font-size: 13px;
       font-weight: 700;
       margin-top: 4px;
+    }
+
+    .fuel-strip {
+      margin-top: 8px;
+      background: rgba(11, 17, 23, 0.55);
+      border: 1px solid rgba(251, 191, 36, 0.22);
+      border-radius: 12px;
+      padding: 8px 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .fuel-strip-left {
+      min-width: 0;
+      flex: 1;
+    }
+
+    .fuel-main {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--amber);
+    }
+
+    .fuel-sub {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 1px;
+    }
+
+    .fuel-price-btn {
+      flex-shrink: 0;
+      background: var(--amber-bg);
+      color: var(--amber);
+      border: 1px solid rgba(251, 191, 36, 0.45);
+      border-radius: 10px;
+      padding: 6px 10px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 11px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .mini-tag.fuel {
+      background: var(--amber-bg);
+      color: var(--amber);
     }
 
     .tabs-scroll {
@@ -596,10 +644,10 @@
   <div class="container">
     <header class="topbar">
       <div class="brand">
-        <div class="brand-badge">RL</div>
+        <div class="brand-badge">RT</div>
         <div>
-          <div class="brand-title">RotaLucro</div>
-          <div class="brand-sub">Salvo neste navegador</div>
+          <div class="brand-title">Rota Lucro do Tatai</div>
+          <div class="brand-sub" id="storageStatus">Salvo no aparelho</div>
         </div>
       </div>
       <div class="topbar-actions">
@@ -640,6 +688,13 @@
           <div class="metric-title">Total de KM</div>
           <div class="metric-val" id="totalKm" style="color:var(--sky)">0 km</div>
         </div>
+      </div>
+      <div class="fuel-strip" id="fuelStrip">
+        <div class="fuel-strip-left">
+          <div class="fuel-main" id="fuelEfficiencyMain">Consumo e Média (km/L)</div>
+          <div class="fuel-sub" id="fuelEfficiencySub">Informe R$/L para calcular km/L</div>
+        </div>
+        <button class="fuel-price-btn" id="btnFuelPrice" type="button">Definir R$/L</button>
       </div>
     </section>
 
@@ -718,6 +773,14 @@
           <label for="fKm">KM Rodado</label>
           <input id="fKm" type="text" inputmode="decimal" placeholder="0" />
         </div>
+        <div class="field-group full" id="liveFuelPreviewBox" style="display:none;">
+          <div class="fuel-strip" style="margin-top:0;">
+            <div class="fuel-strip-left">
+              <div class="fuel-main" id="liveFuelPreviewMain"></div>
+              <div class="fuel-sub" id="liveFuelPreviewSub"></div>
+            </div>
+          </div>
+        </div>
         <div class="field-group full">
           <label for="fNotes">Observação (opcional)</label>
           <input id="fNotes" type="text" maxlength="200" placeholder="Ex: Turno noite" />
@@ -787,6 +850,27 @@
     </div>
   </div>
 
+  <!-- Fuel Price Modal -->
+  <div class="modal-backdrop" id="fuelPriceModal">
+    <div class="modal-sheet">
+      <div class="modal-header">
+        <div class="modal-title">Preço do Combustível (R$/L)</div>
+        <button class="btn-ghost" id="btnCloseFuelModal">Fechar</button>
+      </div>
+      <p class="brand-sub" style="font-size:13px; margin-top:0;">
+        Informe o preço médio pago por litro (ex: 5,99). O app usa o KM rodado e o gasto em combustível para calcular litros estimados e a média do veículo em km/L.
+      </p>
+      <div class="field-group">
+        <label for="fuelPriceInput">Preço por litro (R$/L)</label>
+        <input id="fuelPriceInput" type="text" inputmode="decimal" placeholder="5,99" />
+      </div>
+      <div class="modal-actions">
+        <button class="btn-danger" id="btnClearFuelPrice" type="button">Limpar</button>
+        <button class="btn-primary" id="btnSaveFuelPrice" type="button">Salvar Preço</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Backup Modal -->
   <div class="modal-backdrop" id="backupModal">
     <div class="modal-sheet">
@@ -812,6 +896,7 @@
   <script>
     (function () {
       const STORAGE_KEY = "rotalucro_entries_v1";
+      const FUEL_PRICE_KEY = "rotalucro_fuel_price_v1";
       const MONTHS = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
       const MONTHS_SHORT = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
       const WEEKDAYS = ["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"];
@@ -838,16 +923,123 @@
       let quickAddMode = true;
       let pickerYear = selectedYear;
 
-      function loadAllEntries() {
+      const IDB_NAME = "rotalucro_tatai_db";
+      const IDB_STORE = "entries_store";
+      let cachedEntries = null;
+      let cachedFuelPrice = null;
+
+      function openIdb() {
+        return new Promise((resolve) => {
+          if (!window.indexedDB) { resolve(null); return; }
+          const req = indexedDB.open(IDB_NAME, 1);
+          req.onupgradeneeded = () => {
+            const db = req.result;
+            if (!db.objectStoreNames.contains(IDB_STORE)) {
+              db.createObjectStore(IDB_STORE);
+            }
+          };
+          req.onsuccess = () => resolve(req.result);
+          req.onerror = () => resolve(null);
+        });
+      }
+
+      async function saveToIdb(key, value) {
         try {
-          return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+          const db = await openIdb();
+          if (!db) return;
+          const tx = db.transaction(IDB_STORE, "readwrite");
+          tx.objectStore(IDB_STORE).put(value, key);
+        } catch (e) {}
+      }
+
+      async function loadFromIdb(key) {
+        try {
+          const db = await openIdb();
+          if (!db) return null;
+          return await new Promise((resolve) => {
+            const tx = db.transaction(IDB_STORE, "readonly");
+            const req = tx.objectStore(IDB_STORE).get(key);
+            req.onsuccess = () => resolve(req.result ?? null);
+            req.onerror = () => resolve(null);
+          });
         } catch (e) {
-          return {};
+          return null;
+        }
+      }
+
+      function loadAllEntries() {
+        if (cachedEntries) return cachedEntries;
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          cachedEntries = raw ? JSON.parse(raw) : {};
+          return cachedEntries;
+        } catch (e) {
+          cachedEntries = {};
+          return cachedEntries;
         }
       }
 
       function saveAllEntries(map) {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(map));
+        cachedEntries = map;
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(map));
+        } catch (e) {}
+        saveToIdb(STORAGE_KEY, map);
+      }
+
+      function loadFuelPrice() {
+        if (cachedFuelPrice !== null) return cachedFuelPrice;
+        try {
+          const raw = localStorage.getItem(FUEL_PRICE_KEY);
+          const n = raw ? parseFloat(raw) : 0;
+          cachedFuelPrice = Number.isFinite(n) && n > 0 ? n : 0;
+          return cachedFuelPrice;
+        } catch (e) {
+          cachedFuelPrice = 0;
+          return 0;
+        }
+      }
+
+      function saveFuelPrice(price) {
+        const sanitized = Number.isFinite(price) && price > 0 ? price : 0;
+        cachedFuelPrice = sanitized;
+        try {
+          localStorage.setItem(FUEL_PRICE_KEY, String(sanitized));
+        } catch (e) {}
+        saveToIdb(FUEL_PRICE_KEY, sanitized);
+      }
+
+      async function initPersistence() {
+        if (navigator.storage && navigator.storage.persist) {
+          try { await navigator.storage.persist(); } catch (e) {}
+        }
+        const ls = loadAllEntries();
+        const lsKeys = Object.keys(ls);
+        let shouldRender = false;
+        if (lsKeys.length === 0) {
+          const idbData = await loadFromIdb(STORAGE_KEY);
+          if (idbData && typeof idbData === "object" && Object.keys(idbData).length > 0) {
+            cachedEntries = idbData;
+            try { localStorage.setItem(STORAGE_KEY, JSON.stringify(idbData)); } catch (e) {}
+            shouldRender = true;
+          }
+        } else {
+          saveToIdb(STORAGE_KEY, ls);
+        }
+
+        const currentPrice = loadFuelPrice();
+        if (currentPrice <= 0) {
+          const idbPrice = await loadFromIdb(FUEL_PRICE_KEY);
+          if (typeof idbPrice === "number" && idbPrice > 0) {
+            cachedFuelPrice = idbPrice;
+            try { localStorage.setItem(FUEL_PRICE_KEY, String(idbPrice)); } catch (e) {}
+            shouldRender = true;
+          }
+        } else {
+          saveToIdb(FUEL_PRICE_KEY, currentPrice);
+        }
+
+        if (shouldRender) render();
       }
 
       function docKey(year, month, day) {
@@ -876,6 +1068,22 @@
         return `${(v || 0).toLocaleString("pt-BR", { maximumFractionDigits: 1 })} km`;
       }
 
+      function formatKmPerLiter(v) {
+        return `${(v || 0).toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} km/L`;
+      }
+
+      function formatLiters(v) {
+        return `${(v || 0).toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} L`;
+      }
+
+      function calcFuelStats(combustivel, km, fuelPrice) {
+        const hasBoth = combustivel > 0 && km > 0;
+        const custoPorKm = hasBoth ? combustivel / km : 0;
+        const litros = (combustivel > 0 && fuelPrice > 0) ? combustivel / fuelPrice : 0;
+        const mediaKmL = (hasBoth && litros > 0) ? km / litros : 0;
+        return { hasBoth, custoPorKm, litros, mediaKmL };
+      }
+
       function parseNum(raw) {
         if (!raw) return 0;
         let s = String(raw).trim().replace(/R\$/g, "").replace(/\s/g, "");
@@ -899,6 +1107,13 @@
 
       function render() {
         const all = loadAllEntries();
+        const totalSavedDays = Object.keys(all).length;
+        const statusEl = document.getElementById("storageStatus");
+        if (statusEl) {
+          statusEl.textContent = totalSavedDays > 0
+            ? `Salvo no navegador • ${totalSavedDays} dia(s) registrado(s)`
+            : "Salvo automaticamente neste navegador";
+        }
         const totalDays = daysInMonth(selectedYear, selectedMonth);
         const monthName = MONTHS[selectedMonth - 1];
         const monthShort = MONTHS_SHORT[selectedMonth - 1];
@@ -952,6 +1167,27 @@
           kmBadge.style.display = "none";
         }
 
+        // Fuel Efficiency Strip
+        const fuelPrice = loadFuelPrice();
+        const monthlyFuel = calcFuelStats(sumComb, sumKm, fuelPrice);
+        const fuelMainEl = document.getElementById("fuelEfficiencyMain");
+        const fuelSubEl = document.getElementById("fuelEfficiencySub");
+        const btnFuelPrice = document.getElementById("btnFuelPrice");
+
+        btnFuelPrice.textContent = fuelPrice > 0 ? `${formatBrl(fuelPrice)}/L` : "Definir R$/L";
+        if (monthlyFuel.hasBoth && fuelPrice > 0) {
+          fuelMainEl.textContent = `Média: ${formatKmPerLiter(monthlyFuel.mediaKmL)} • ${formatLiters(monthlyFuel.litros)}`;
+          fuelSubEl.textContent = `Comb./km: ${formatBrl(monthlyFuel.custoPorKm)}/km`;
+        } else if (monthlyFuel.hasBoth) {
+          fuelMainEl.textContent = `Comb./km: ${formatBrl(monthlyFuel.custoPorKm)}/km`;
+          fuelSubEl.textContent = "Informe o preço/L para calcular a média em km/L";
+        } else {
+          fuelMainEl.textContent = "Consumo e Média do Veículo";
+          fuelSubEl.textContent = fuelPrice > 0
+            ? "Lance KM e Combustível para ver km/L"
+            : "Calcule km/L com KM + Combustível";
+        }
+
         // Tabs
         const tabsRow = document.getElementById("tabsRow");
         tabsRow.innerHTML = "";
@@ -982,6 +1218,13 @@
             : tabMeta.kind === "distance" ? "var(--sky-bg)"
             : (val >= 0 ? "var(--emerald-bg)" : "var(--coral-bg)");
 
+          let extraFuelLine = "";
+          if ((selectedTab === "combustivel" || selectedTab === "kmRodado") && monthlyFuel.hasBoth) {
+            extraFuelLine = monthlyFuel.mediaKmL > 0
+              ? `<div style="font-size:11px;color:var(--amber);font-weight:700;margin-top:3px;">Média: ${formatKmPerLiter(monthlyFuel.mediaKmL)} • ${formatLiters(monthlyFuel.litros)} • ${formatBrl(monthlyFuel.custoPorKm)}/km</div>`
+              : `<div style="font-size:11px;color:var(--amber);font-weight:700;margin-top:3px;">Comb./km: ${formatBrl(monthlyFuel.custoPorKm)}/km (defina R$/L no resumo p/ km/L)</div>`;
+          }
+
           const banner = document.createElement("div");
           banner.className = "tab-banner";
           banner.style.background = bg;
@@ -990,6 +1233,7 @@
             <div>
               <div style="font-weight:700;font-size:14px;">${tabMeta.label} • ${monthName}</div>
               <div style="font-size:11px;color:${color};font-weight:700;">${tabMeta.badge || ""}</div>
+              ${extraFuelLine}
             </div>
             <div style="font-family:monospace;font-weight:800;font-size:16px;color:${color};">
               ${selectedTab === "kmRodado" ? formatKm(val) : formatBrl(val)}
@@ -1008,6 +1252,7 @@
           card.dataset.day = slot.day;
 
           const profitColor = !slot.active ? "var(--muted)" : (slot.lucro >= 0 ? "var(--emerald)" : "var(--coral)");
+          const dayFuel = calcFuelStats(slot.entry.combustivel, slot.entry.kmRodado, fuelPrice);
           let centerHtml = "";
           let rightVal = formatBrl(slot.lucro);
           let rightLabel = "Lucro do dia";
@@ -1021,6 +1266,7 @@
               if (slot.entry.uber > 0) tags.push(`<span class="mini-tag">Uber ${formatBrl(slot.entry.uber)}</span>`);
               if (slot.entry.pop99 > 0) tags.push(`<span class="mini-tag">99 ${formatBrl(slot.entry.pop99)}</span>`);
               if (slot.entry.kmRodado > 0) tags.push(`<span class="mini-tag km">${formatKm(slot.entry.kmRodado)}</span>`);
+              if (dayFuel.mediaKmL > 0) tags.push(`<span class="mini-tag fuel">${formatKmPerLiter(dayFuel.mediaKmL)}</span>`);
               centerHtml = `
                 <div class="day-flows">
                   <span style="color:var(--emerald)">+ ${formatBrl(slot.ganhos)}</span>
@@ -1045,9 +1291,17 @@
             rightLabel = tabMeta.label;
             rightVal = selectedTab === "kmRodado" ? formatKm(v) : formatBrl(v);
             rightColor = v > 0 ? fieldColor : "var(--muted)";
+            let subLine = slot.active
+              ? `<div class="brand-sub" style="color:${profitColor}">Lucro do dia: ${formatBrl(slot.lucro)}</div>`
+              : `<div class="day-empty">Toque para lançar</div>`;
+            if ((selectedTab === "combustivel" || selectedTab === "kmRodado") && dayFuel.hasBoth) {
+              subLine = dayFuel.mediaKmL > 0
+                ? `<div class="brand-sub" style="color:var(--amber);font-weight:700;">Média: ${formatKmPerLiter(dayFuel.mediaKmL)} • ${formatBrl(dayFuel.custoPorKm)}/km</div>`
+                : `<div class="brand-sub" style="color:var(--amber);font-weight:700;">Comb./km: ${formatBrl(dayFuel.custoPorKm)}/km</div>`;
+            }
             centerHtml = `
               <div style="font-size:13px;font-weight:700;color:${rightColor};">${rightVal}</div>
-              ${slot.active ? `<div class="brand-sub" style="color:${profitColor}">Lucro do dia: ${formatBrl(slot.lucro)}</div>` : `<div class="day-empty">Toque para lançar</div>`}`;
+              ${subLine}`;
             card.onclick = () => openQuickModal(slot.day);
           }
 
@@ -1067,7 +1321,9 @@
 
       function updateLiveFullPreview() {
         const g = parseNum(document.getElementById("fUber").value) + parseNum(document.getElementById("fPop99").value);
-        const d = parseNum(document.getElementById("fCombustivel").value)
+        const comb = parseNum(document.getElementById("fCombustivel").value);
+        const km = parseNum(document.getElementById("fKm").value);
+        const d = comb
           + parseNum(document.getElementById("fRecarga").value)
           + parseNum(document.getElementById("fAluguel").value)
           + parseNum(document.getElementById("fAlimento").value)
@@ -1078,6 +1334,20 @@
         const lp = document.getElementById("livePreviewProfit");
         lp.textContent = formatBrl(l);
         lp.style.color = l >= 0 ? "var(--emerald)" : "var(--coral)";
+
+        const fuelBox = document.getElementById("liveFuelPreviewBox");
+        const dayFuel = calcFuelStats(comb, km, loadFuelPrice());
+        if (dayFuel.hasBoth) {
+          fuelBox.style.display = "flex";
+          document.getElementById("liveFuelPreviewMain").textContent = dayFuel.mediaKmL > 0
+            ? `Média do dia: ${formatKmPerLiter(dayFuel.mediaKmL)}`
+            : `Custo combustível/km: ${formatBrl(dayFuel.custoPorKm)}/km`;
+          document.getElementById("liveFuelPreviewSub").textContent = dayFuel.mediaKmL > 0
+            ? `${formatLiters(dayFuel.litros)} est. • ${formatBrl(dayFuel.custoPorKm)}/km`
+            : "Defina o preço/L no resumo para ver a média em km/L";
+        } else {
+          fuelBox.style.display = "none";
+        }
       }
 
       function openFullModal(day) {
@@ -1240,6 +1510,27 @@
       document.getElementById("summaryToggle").onclick = () => {
         summaryExpanded = !summaryExpanded;
         document.getElementById("summaryGrid").style.display = summaryExpanded ? "grid" : "none";
+        document.getElementById("fuelStrip").style.display = summaryExpanded ? "flex" : "none";
+      };
+
+      // Fuel Price Modal
+      document.getElementById("btnFuelPrice").onclick = () => {
+        document.getElementById("fuelPriceInput").value = formatInput(loadFuelPrice());
+        document.getElementById("fuelPriceModal").classList.add("open");
+      };
+      document.getElementById("btnCloseFuelModal").onclick = () => {
+        document.getElementById("fuelPriceModal").classList.remove("open");
+      };
+      document.getElementById("btnSaveFuelPrice").onclick = () => {
+        const p = parseNum(document.getElementById("fuelPriceInput").value);
+        saveFuelPrice(p);
+        document.getElementById("fuelPriceModal").classList.remove("open");
+        render();
+      };
+      document.getElementById("btnClearFuelPrice").onclick = () => {
+        saveFuelPrice(0);
+        document.getElementById("fuelPriceModal").classList.remove("open");
+        render();
       };
 
       // Month Picker
@@ -1273,10 +1564,14 @@
       document.getElementById("btnBackup").onclick = () => document.getElementById("backupModal").classList.add("open");
       document.getElementById("btnCloseBackup").onclick = () => document.getElementById("backupModal").classList.remove("open");
       document.getElementById("btnExportJson").onclick = () => {
-        const blob = new Blob([JSON.stringify(loadAllEntries(), null, 2)], { type: "application/json" });
+        const payload = {
+          entries: loadAllEntries(),
+          fuelPrice: loadFuelPrice()
+        };
+        const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
         const a = document.createElement("a");
         a.href = URL.createObjectURL(blob);
-        a.download = `rotalucro-backup-${new Date().toISOString().slice(0, 10)}.json`;
+        a.download = `rota-lucro-do-tatai-backup-${new Date().toISOString().slice(0, 10)}.json`;
         a.click();
       };
       document.getElementById("importJsonInput").onchange = (ev) => {
@@ -1287,7 +1582,14 @@
           try {
             const parsed = JSON.parse(reader.result);
             if (parsed && typeof parsed === "object") {
-              saveAllEntries({ ...loadAllEntries(), ...parsed });
+              if (parsed.entries && typeof parsed.entries === "object") {
+                saveAllEntries({ ...loadAllEntries(), ...parsed.entries });
+                if (typeof parsed.fuelPrice === "number" && parsed.fuelPrice > 0) {
+                  saveFuelPrice(parsed.fuelPrice);
+                }
+              } else {
+                saveAllEntries({ ...loadAllEntries(), ...parsed });
+              }
               document.getElementById("backupModal").classList.remove("open");
               render();
             }
@@ -1299,6 +1601,7 @@
       };
 
       render();
+      initPersistence();
     })();
   </script>
 </body>

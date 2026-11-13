@@ -24,6 +24,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.LocalGasStation
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -54,6 +55,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.example.R
+import com.example.ui.theme.AmberBright
 import com.example.ui.theme.CoralExpense
 import com.example.ui.theme.EmeraldPrimary
 import com.example.ui.theme.NumericMediumStyle
@@ -64,6 +66,7 @@ import com.example.ui.theme.SkyKm
 @Composable
 fun DayEntryBottomSheet(
     slot: DaySlot,
+    fuelPricePerLiter: Double = 0.0,
     onDismiss: () -> Unit,
     onSave: (
         uber: Double,
@@ -307,6 +310,57 @@ fun DayEntryBottomSheet(
                     .fillMaxWidth()
                     .testTag("input_km")
             )
+            if (combustivelVal > 0.0 && kmVal > 0.0) {
+                val custoPorKmDia = combustivelVal / kmVal
+                val litrosDia = if (fuelPricePerLiter > 0.0) combustivelVal / fuelPricePerLiter else 0.0
+                val mediaDia = if (litrosDia > 0.0) kmVal / litrosDia else 0.0
+                Surface(
+                    color = AmberBright.copy(alpha = 0.12f),
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 12.dp, vertical = 10.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.LocalGasStation,
+                                contentDescription = null,
+                                tint = AmberBright,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Column {
+                                Text(
+                                    text = if (mediaDia > 0.0) {
+                                        "Média do dia: ${LedgerFormatters.formatKmPerLiter(mediaDia)}"
+                                    } else {
+                                        "Custo combustível/km"
+                                    },
+                                    style = NumericSmallStyle,
+                                    color = AmberBright,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    text = if (litrosDia > 0.0) {
+                                        "${LedgerFormatters.formatLiters(litrosDia)} est. • ${LedgerFormatters.formatBrl(custoPorKmDia)}/km"
+                                    } else {
+                                        "${LedgerFormatters.formatBrl(custoPorKmDia)}/km (defina R$/L no resumo p/ km/L)"
+                                    },
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+                }
+            }
             OutlinedTextField(
                 value = notesText,
                 onValueChange = { if (it.length <= 200) notesText = it },
@@ -603,6 +657,74 @@ fun MonthYearPickerDialog(
         },
         confirmButton = {
             Button(onClick = { onSelect(pickedYear, pickedMonth) }) {
+                Text(stringResource(R.string.save))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.cancel))
+            }
+        }
+    )
+}
+
+@Composable
+fun FuelPriceDialog(
+    initialPrice: Double,
+    onDismiss: () -> Unit,
+    onSave: (Double) -> Unit,
+) {
+    var priceText by remember(initialPrice) {
+        mutableStateOf(LedgerFormatters.formatInputNumber(initialPrice))
+    }
+    val parsedPrice = LedgerFormatters.parseDecimalInput(priceText)
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.LocalGasStation,
+                    contentDescription = null,
+                    tint = AmberBright
+                )
+                Text(stringResource(R.string.fuel_price_dialog_title))
+            }
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(
+                    text = stringResource(R.string.fuel_price_dialog_desc),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                DecimalInputField(
+                    label = stringResource(R.string.fuel_price_input_label),
+                    prefix = "R$/L",
+                    value = priceText,
+                    onValueChange = { priceText = it },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("fuel_price_input")
+                )
+                if (initialPrice > 0.0) {
+                    TextButton(
+                        onClick = { onSave(0.0) },
+                        modifier = Modifier.align(Alignment.End)
+                    ) {
+                        Text("Limpar preço", color = CoralExpense)
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = { onSave(parsedPrice) },
+                modifier = Modifier.testTag("save_fuel_price_button")
+            ) {
                 Text(stringResource(R.string.save))
             }
         },

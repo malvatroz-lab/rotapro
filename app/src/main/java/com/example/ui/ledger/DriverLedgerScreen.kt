@@ -1,5 +1,6 @@
 package com.example.ui.ledger
 
+import android.content.Context
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -103,13 +104,23 @@ fun DriverLedgerScreen(
                 }
                 val databaseId = app.getString(R.string.firestore_database_id)
                 val db = FirebaseFirestore.getInstance(databaseId)
-                DriverLedgerViewModel(DriverLedgerRepository(db), currentUserId)
+                val prefs = app.getSharedPreferences("rotalucro_prefs", Context.MODE_PRIVATE)
+                val savedFuelPrice = prefs.getFloat("fuel_price_per_liter", 0f).toDouble()
+                DriverLedgerViewModel(
+                    repository = DriverLedgerRepository(db),
+                    currentUserId = currentUserId,
+                    initialFuelPricePerLiter = savedFuelPrice,
+                    onSaveFuelPrice = { newPrice ->
+                        prefs.edit().putFloat("fuel_price_per_liter", newPrice.toFloat()).apply()
+                    }
+                )
             }
         }
     )
 
     val selectedYearMonth by viewModel.selectedYearMonth.collectAsStateWithLifecycle()
     val selectedTab by viewModel.selectedTab.collectAsStateWithLifecycle()
+    val fuelPricePerLiter by viewModel.fuelPricePerLiter.collectAsStateWithLifecycle()
     val ledgerState by viewModel.ledgerState.collectAsStateWithLifecycle()
     val isSaving by viewModel.isSaving.collectAsStateWithLifecycle()
     val feedbackMessage by viewModel.feedbackMessage.collectAsStateWithLifecycle()
@@ -120,6 +131,7 @@ fun DriverLedgerScreen(
     var fullEditorSlot by remember { mutableStateOf<DaySlot?>(null) }
     var quickDialogSlot by remember { mutableStateOf<DaySlot?>(null) }
     var showMonthPicker by remember { mutableStateOf(false) }
+    var showFuelPriceDialog by remember { mutableStateOf(false) }
     var showSignOutDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(feedbackMessage) {
@@ -357,6 +369,8 @@ fun DriverLedgerScreen(
                             monthName = monthName,
                             year = year,
                             summary = summary,
+                            fuelPricePerLiter = fuelPricePerLiter,
+                            onEditFuelPrice = { showFuelPriceDialog = true },
                             modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
                         )
 
@@ -401,6 +415,9 @@ fun DriverLedgerScreen(
                                 tab = selectedTab,
                                 monthName = monthName,
                                 totalValue = summary.totalForTab(selectedTab),
+                                summary = summary,
+                                fuelPricePerLiter = fuelPricePerLiter,
+                                onEditFuelPrice = { showFuelPriceDialog = true },
                                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
                             )
                         } else {
@@ -429,6 +446,7 @@ fun DriverLedgerScreen(
                                 when (selectedTab) {
                                     LedgerTab.OVERVIEW -> OverviewDayCard(
                                         slot = slot,
+                                        fuelPricePerLiter = fuelPricePerLiter,
                                         onClick = { fullEditorSlot = slot }
                                     )
                                     LedgerTab.LUCRO_DIA -> DailyProfitRowCard(
@@ -439,6 +457,7 @@ fun DriverLedgerScreen(
                                     else -> SingleTabDayCard(
                                         slot = slot,
                                         tab = selectedTab,
+                                        fuelPricePerLiter = fuelPricePerLiter,
                                         onClick = { quickDialogSlot = slot },
                                         onEditFullDay = { fullEditorSlot = slot }
                                     )
@@ -454,6 +473,7 @@ fun DriverLedgerScreen(
     fullEditorSlot?.let { slot ->
         DayEntryBottomSheet(
             slot = slot,
+            fuelPricePerLiter = fuelPricePerLiter,
             onDismiss = { fullEditorSlot = null },
             onSave = { uber, pop99, combustivel, recarga, aluguel, alimento, manutencao, km, notes ->
                 viewModel.saveFullDayEntry(
@@ -507,6 +527,17 @@ fun DriverLedgerScreen(
         )
     }
 
+    if (showFuelPriceDialog) {
+        FuelPriceDialog(
+            initialPrice = fuelPricePerLiter,
+            onDismiss = { showFuelPriceDialog = false },
+            onSave = { price ->
+                viewModel.setFuelPricePerLiter(price)
+                showFuelPriceDialog = false
+            }
+        )
+    }
+
     if (showSignOutDialog) {
         AlertDialog(
             onDismissRequest = { showSignOutDialog = false },
@@ -536,6 +567,9 @@ private fun TabTotalBanner(
     tab: LedgerTab,
     monthName: String,
     totalValue: Double,
+    summary: MonthlySummary,
+    fuelPricePerLiter: Double,
+    onEditFuelPrice: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val accent = when (tab.kind) {
@@ -552,6 +586,9 @@ private fun TabTotalBanner(
         TabKind.PROFIT -> stringResource(R.string.badge_profit)
         TabKind.SUMMARY -> ""
     }
+    val isFuelOrKmTab = tab == LedgerTab.COMBUSTIVEL || tab == LedgerTab.KM
+    val mediaKmL = summary.mediaKmPorLitro(fuelPricePerLiter)
+    val litros = summary.litrosEstimados(fuelPricePerLiter)
 
     Surface(
         modifier = modifier.fillMaxWidth(),
@@ -559,45 +596,79 @@ private fun TabTotalBanner(
         shape = RoundedCornerShape(14.dp),
         border = BorderStroke(1.dp, accent.copy(alpha = 0.28f))
     ) {
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 14.dp, vertical = 10.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+            verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(
-                    imageVector = tab.icon,
-                    contentDescription = null,
-                    tint = accent,
-                    modifier = Modifier.size(20.dp)
-                )
-                Column {
-                    Text(
-                        text = "${stringResource(tab.labelRes)} • $monthName",
-                        style = MaterialTheme.typography.titleSmall,
-                        color = MaterialTheme.colorScheme.onSurface
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Icon(
+                        imageVector = tab.icon,
+                        contentDescription = null,
+                        tint = accent,
+                        modifier = Modifier.size(20.dp)
                     )
-                    if (badge.isNotEmpty()) {
+                    Column {
                         Text(
-                            text = badge,
-                            style = MaterialTheme.typography.labelSmall,
-                            color = accent
+                            text = "${stringResource(tab.labelRes)} • $monthName",
+                            style = MaterialTheme.typography.titleSmall,
+                            color = MaterialTheme.colorScheme.onSurface
                         )
+                        if (badge.isNotEmpty()) {
+                            Text(
+                                text = badge,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = accent
+                            )
+                        }
                     }
                 }
+                Text(
+                    text = if (tab == LedgerTab.KM) LedgerFormatters.formatKm(totalValue)
+                    else LedgerFormatters.formatBrl(totalValue),
+                    style = NumericMediumStyle,
+                    color = accent,
+                    modifier = Modifier.testTag("tab_total_value")
+                )
             }
-            Text(
-                text = if (tab == LedgerTab.KM) LedgerFormatters.formatKm(totalValue)
-                else LedgerFormatters.formatBrl(totalValue),
-                style = NumericMediumStyle,
-                color = accent,
-                modifier = Modifier.testTag("tab_total_value")
-            )
+
+            if (isFuelOrKmTab && summary.totalKm > 0.0 && summary.totalCombustivel > 0.0) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = if (mediaKmL > 0.0) {
+                            "Média: ${LedgerFormatters.formatKmPerLiter(mediaKmL)} • ${LedgerFormatters.formatLiters(litros)} • ${LedgerFormatters.formatBrl(summary.custoCombustivelPorKm)}/km"
+                        } else {
+                            "Comb./km: ${LedgerFormatters.formatBrl(summary.custoCombustivelPorKm)}/km"
+                        },
+                        style = MaterialTheme.typography.labelSmall,
+                        color = AmberBright,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = if (fuelPricePerLiter > 0.0) "${LedgerFormatters.formatBrl(fuelPricePerLiter)}/L" else "Definir R$/L",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = AmberBright,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(6.dp))
+                            .clickable(onClick = onEditFuelPrice)
+                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                    )
+                }
+            }
         }
     }
 }
@@ -635,6 +706,7 @@ private fun DayDateBadge(slot: DaySlot) {
 @Composable
 private fun OverviewDayCard(
     slot: DaySlot,
+    fuelPricePerLiter: Double,
     onClick: () -> Unit,
 ) {
     val profitColor = when {
@@ -642,6 +714,7 @@ private fun OverviewDayCard(
         slot.lucroDoDia >= 0.0 -> EmeraldPrimary
         else -> CoralExpense
     }
+    val dayMediaKmL = slot.mediaKmPorLitro(fuelPricePerLiter)
 
     Card(
         modifier = Modifier
@@ -706,6 +779,9 @@ private fun OverviewDayCard(
                         if (slot.kmRodado > 0.0) {
                             MiniTag(LedgerFormatters.formatKm(slot.kmRodado), tint = SkyKm)
                         }
+                        if (dayMediaKmL > 0.0) {
+                            MiniTag(LedgerFormatters.formatKmPerLiter(dayMediaKmL), tint = AmberBright)
+                        }
                     }
                 }
             }
@@ -730,6 +806,7 @@ private fun OverviewDayCard(
 private fun SingleTabDayCard(
     slot: DaySlot,
     tab: LedgerTab,
+    fuelPricePerLiter: Double,
     onClick: () -> Unit,
     onEditFullDay: () -> Unit,
 ) {
@@ -745,6 +822,8 @@ private fun SingleTabDayCard(
     } else {
         LedgerFormatters.formatBrl(tabValue)
     }
+    val isFuelOrKmTab = tab == LedgerTab.COMBUSTIVEL || tab == LedgerTab.KM
+    val dayMediaKmL = slot.mediaKmPorLitro(fuelPricePerLiter)
 
     Card(
         modifier = Modifier
@@ -781,7 +860,17 @@ private fun SingleTabDayCard(
                     style = NumericMediumStyle,
                     color = if (tabValue > 0.0) accent else MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                if (slot.hasData) {
+                if (isFuelOrKmTab && slot.combustivel > 0.0 && slot.kmRodado > 0.0) {
+                    Text(
+                        text = if (dayMediaKmL > 0.0) {
+                            "Média: ${LedgerFormatters.formatKmPerLiter(dayMediaKmL)} • ${LedgerFormatters.formatBrl(slot.custoCombustivelPorKm)}/km"
+                        } else {
+                            "Comb./km: ${LedgerFormatters.formatBrl(slot.custoCombustivelPorKm)}/km"
+                        },
+                        style = MaterialTheme.typography.labelSmall,
+                        color = AmberBright
+                    )
+                } else if (slot.hasData) {
                     val profitColor = if (slot.lucroDoDia >= 0.0) EmeraldPrimary else CoralExpense
                     Text(
                         text = "Lucro do dia: ${LedgerFormatters.formatBrl(slot.lucroDoDia)}",

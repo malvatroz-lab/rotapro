@@ -93,6 +93,16 @@ data class DaySlot(
     val totalDespesas: Double get() = combustivel + recarga + aluguel + alimento + manutencao
     val lucroDoDia: Double get() = totalGanhos - totalDespesas
     val hasData: Boolean get() = entry?.hasAnyValue == true
+    val custoCombustivelPorKm: Double
+        get() = if (kmRodado > 0.0 && combustivel > 0.0) combustivel / kmRodado else 0.0
+
+    fun litrosEstimados(fuelPricePerLiter: Double): Double =
+        if (fuelPricePerLiter > 0.0 && combustivel > 0.0) combustivel / fuelPricePerLiter else 0.0
+
+    fun mediaKmPorLitro(fuelPricePerLiter: Double): Double {
+        val litros = litrosEstimados(fuelPricePerLiter)
+        return if (litros > 0.0 && kmRodado > 0.0) kmRodado / litros else 0.0
+    }
 }
 
 data class MonthlySummary(
@@ -111,6 +121,16 @@ data class MonthlySummary(
         get() = totalCombustivel + totalRecarga + totalAluguel + totalAlimento + totalManutencao
     val lucroLiquido: Double get() = totalFaturamentoBruto - totalDespesas
     val lucroPorKm: Double get() = if (totalKm > 0.0) lucroLiquido / totalKm else 0.0
+    val custoCombustivelPorKm: Double
+        get() = if (totalKm > 0.0 && totalCombustivel > 0.0) totalCombustivel / totalKm else 0.0
+
+    fun litrosEstimados(fuelPricePerLiter: Double): Double =
+        if (fuelPricePerLiter > 0.0 && totalCombustivel > 0.0) totalCombustivel / fuelPricePerLiter else 0.0
+
+    fun mediaKmPorLitro(fuelPricePerLiter: Double): Double {
+        val litros = litrosEstimados(fuelPricePerLiter)
+        return if (litros > 0.0 && totalKm > 0.0) totalKm / litros else 0.0
+    }
 
     fun totalForTab(tab: LedgerTab): Double = when (tab) {
         LedgerTab.OVERVIEW -> lucroLiquido
@@ -147,6 +167,10 @@ object LedgerFormatters {
     fun formatBrl(value: Double): String = currencyFormat.format(value)
 
     fun formatKm(value: Double): String = "${decimalFormat.format(value)} km"
+
+    fun formatKmPerLiter(value: Double): String = "${decimalFormat.format(value)} km/L"
+
+    fun formatLiters(value: Double): String = "${decimalFormat.format(value)} L"
 
     fun formatInputNumber(value: Double): String {
         if (value == 0.0) return ""

@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">RotaLucro</string>
+    <string name="app_name">Rota Lucro do Tatai</string>
     <string name="auth_headline">Seu painel financeiro na pista</string>
     <string name="auth_subtitle">Controle ganhos de Uber e 99 Pop, despesas diárias, km rodados e lucro líquido automático na nuvem.</string>
     <string name="auth_sign_in_google">Entrar com Google</string>
@@ -47,4 +47,13 @@
     <string name="mode_add">Somar ao valor atual</string>
     <string name="error_retry">Tentar novamente</string>
     <string name="loading_ledger">Carregando lançamentos do mês…</string>
+    <string name="fuel_efficiency_title">Consumo e Média do Veículo</string>
+    <string name="fuel_avg_label">Média</string>
+    <string name="fuel_liters_label">Litros est.</string>
+    <string name="fuel_cost_per_km_label">Comb./km</string>
+    <string name="fuel_price_set_cta">Definir R$/L</string>
+    <string name="fuel_price_dialog_title">Preço do Combustível (R$/L)</string>
+    <string name="fuel_price_dialog_desc">Informe o valor médio pago por litro para calcular automaticamente quantos litros foram usados e a média do veículo (km/L).</string>
+    <string name="fuel_price_input_label">Preço por litro</string>
+    <string name="fuel_price_missing_hint">Informe o preço/L para calcular a média em km/L.</string>
 </resources>

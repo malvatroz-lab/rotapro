@@ -15,10 +15,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.material.icons.rounded.ArrowDownward
 import androidx.compose.material.icons.rounded.ArrowUpward
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material.icons.rounded.KeyboardArrowUp
+import androidx.compose.material.icons.rounded.LocalGasStation
 import androidx.compose.material.icons.rounded.Route
 import androidx.compose.material.icons.rounded.Savings
 import androidx.compose.material3.Card
@@ -44,6 +46,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.R
+import com.example.ui.theme.AmberBright
 import com.example.ui.theme.CoralExpense
 import com.example.ui.theme.EmeraldPrimary
 import com.example.ui.theme.NumericHeroStyle
@@ -56,6 +59,8 @@ fun MonthlySummaryHeader(
     monthName: String,
     year: Int,
     summary: MonthlySummary,
+    fuelPricePerLiter: Double = 0.0,
+    onEditFuelPrice: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     var showBreakdown by rememberSaveable { mutableStateOf(true) }
@@ -160,38 +165,175 @@ fun MonthlySummaryHeader(
             }
 
             AnimatedVisibility(visible = showBreakdown) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    MetricMiniTile(
-                        label = stringResource(R.string.summary_gross_revenue),
-                        value = LedgerFormatters.formatBrl(summary.totalFaturamentoBruto),
-                        accent = EmeraldPrimary,
-                        icon = Icons.Rounded.ArrowUpward,
-                        modifier = Modifier
-                            .weight(1f)
-                            .testTag("monthly_gross_revenue_tile")
-                    )
-                    MetricMiniTile(
-                        label = stringResource(R.string.summary_total_expenses),
-                        value = LedgerFormatters.formatBrl(summary.totalDespesas),
-                        accent = CoralExpense,
-                        icon = Icons.Rounded.ArrowDownward,
-                        modifier = Modifier
-                            .weight(1f)
-                            .testTag("monthly_expenses_tile")
-                    )
-                    MetricMiniTile(
-                        label = stringResource(R.string.summary_total_km),
-                        value = LedgerFormatters.formatKm(summary.totalKm),
-                        accent = SkyKm,
-                        icon = Icons.Rounded.Route,
-                        modifier = Modifier
-                            .weight(0.88f)
-                            .testTag("monthly_km_tile")
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        MetricMiniTile(
+                            label = stringResource(R.string.summary_gross_revenue),
+                            value = LedgerFormatters.formatBrl(summary.totalFaturamentoBruto),
+                            accent = EmeraldPrimary,
+                            icon = Icons.Rounded.ArrowUpward,
+                            modifier = Modifier
+                                .weight(1f)
+                                .testTag("monthly_gross_revenue_tile")
+                        )
+                        MetricMiniTile(
+                            label = stringResource(R.string.summary_total_expenses),
+                            value = LedgerFormatters.formatBrl(summary.totalDespesas),
+                            accent = CoralExpense,
+                            icon = Icons.Rounded.ArrowDownward,
+                            modifier = Modifier
+                                .weight(1f)
+                                .testTag("monthly_expenses_tile")
+                        )
+                        MetricMiniTile(
+                            label = stringResource(R.string.summary_total_km),
+                            value = LedgerFormatters.formatKm(summary.totalKm),
+                            accent = SkyKm,
+                            icon = Icons.Rounded.Route,
+                            modifier = Modifier
+                                .weight(0.88f)
+                                .testTag("monthly_km_tile")
+                        )
+                    }
+
+                    FuelEfficiencyStrip(
+                        summary = summary,
+                        fuelPricePerLiter = fuelPricePerLiter,
+                        onEditFuelPrice = onEditFuelPrice
                     )
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun FuelEfficiencyStrip(
+    summary: MonthlySummary,
+    fuelPricePerLiter: Double,
+    onEditFuelPrice: () -> Unit,
+) {
+    val hasFuelAndKm = summary.totalKm > 0.0 && summary.totalCombustivel > 0.0
+    val mediaKmL = summary.mediaKmPorLitro(fuelPricePerLiter)
+    val litros = summary.litrosEstimados(fuelPricePerLiter)
+    val custoPorKm = summary.custoCombustivelPorKm
+
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .testTag("fuel_efficiency_strip"),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.65f),
+        shape = RoundedCornerShape(14.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 10.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(
+                modifier = Modifier.weight(1f),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(26.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(AmberBright.copy(alpha = 0.18f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.LocalGasStation,
+                        contentDescription = null,
+                        tint = AmberBright,
+                        modifier = Modifier.size(15.dp)
+                    )
+                }
+                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    if (hasFuelAndKm && fuelPricePerLiter > 0.0) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                text = "${stringResource(R.string.fuel_avg_label)}: ${LedgerFormatters.formatKmPerLiter(mediaKmL)}",
+                                style = NumericSmallStyle,
+                                color = AmberBright,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.testTag("monthly_km_per_liter_text")
+                            )
+                            Text(
+                                text = "• ${LedgerFormatters.formatLiters(litros)}",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Text(
+                            text = "${stringResource(R.string.fuel_cost_per_km_label)}: ${LedgerFormatters.formatBrl(custoPorKm)}/km",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    } else if (hasFuelAndKm) {
+                        Text(
+                            text = "${stringResource(R.string.fuel_cost_per_km_label)}: ${LedgerFormatters.formatBrl(custoPorKm)}/km",
+                            style = NumericSmallStyle,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            text = stringResource(R.string.fuel_price_missing_hint),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    } else {
+                        Text(
+                            text = stringResource(R.string.fuel_efficiency_title),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Text(
+                            text = if (fuelPricePerLiter > 0.0) {
+                                "Lance KM e Combustível para ver km/L"
+                            } else {
+                                "Calcule km/L com KM + Combustível"
+                            },
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.width(6.dp))
+
+            Surface(
+                onClick = onEditFuelPrice,
+                shape = RoundedCornerShape(10.dp),
+                color = AmberBright.copy(alpha = 0.16f),
+                border = BorderStroke(1.dp, AmberBright.copy(alpha = 0.4f)),
+                modifier = Modifier.testTag("fuel_price_button")
+            ) {
+                Text(
+                    text = if (fuelPricePerLiter > 0.0) {
+                        "${LedgerFormatters.formatBrl(fuelPricePerLiter)}/L"
+                    } else {
+                        stringResource(R.string.fuel_price_set_cta)
+                    },
+                    style = NumericSmallStyle,
+                    color = AmberBright,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                )
             }
         }
     }

@@ -23,6 +23,8 @@ import kotlinx.coroutines.launch
 class DriverLedgerViewModel(
     private val repository: DriverLedgerRepository,
     private val currentUserId: String,
+    initialFuelPricePerLiter: Double = 0.0,
+    private val onSaveFuelPrice: (Double) -> Unit = {},
 ) : ViewModel() {
 
     private val initialYearMonth = LedgerCalendar.currentYearMonth()
@@ -32,6 +34,9 @@ class DriverLedgerViewModel(
 
     private val _selectedTab = MutableStateFlow(LedgerTab.OVERVIEW)
     val selectedTab: StateFlow<LedgerTab> = _selectedTab.asStateFlow()
+
+    private val _fuelPricePerLiter = MutableStateFlow(initialFuelPricePerLiter.coerceAtLeast(0.0))
+    val fuelPricePerLiter: StateFlow<Double> = _fuelPricePerLiter.asStateFlow()
 
     private val _isSaving = MutableStateFlow(false)
     val isSaving: StateFlow<Boolean> = _isSaving.asStateFlow()
@@ -102,6 +107,12 @@ class DriverLedgerViewModel(
 
     fun selectTab(tab: LedgerTab) {
         _selectedTab.value = tab
+    }
+
+    fun setFuelPricePerLiter(price: Double) {
+        val sanitized = price.coerceAtLeast(0.0)
+        _fuelPricePerLiter.value = sanitized
+        onSaveFuelPrice(sanitized)
     }
 
     fun previousMonth() {

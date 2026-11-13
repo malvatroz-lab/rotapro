@@ -1,5 +1,5 @@
 {
-  "name": "RotaLucro",
+  "name": "Rota Lucro do Tatai",
   "description": "Controle diário e mensal de ganhos (Uber, 99 Pop), despesas (combustível, recarga, aluguel, alimentação, manutenção), km rodados e lucro líquido para motoristas de aplicativo.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
